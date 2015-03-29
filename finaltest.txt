@@ -38,6 +38,12 @@
 38. Persuasion, Jane Austen
 39. Dune, Frank Herbert
 40. Emma, Jane Austen
+102. Small Gods, Terry Pratchett
+103. The Beach, Alex Garland
+104. Dracula, Bram Stoker
+105. Point Blanc, Anthony Horowitz
+106. The Pickwick Papers, Charles Dickens
+107. Stormbreaker, Anthony Horowitz
 41. Anne Of Green Gables, LM Montgomery
 42. Watership Down, Richard Adams
 43. The Great Gatsby, F Scott Fitzgerald
