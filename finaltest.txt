@@ -45,6 +45,10 @@
 41. Anne Of Green Gables, LM Montgomery
 42. Watership Down, Richard Adams
 43. The Great Gatsby, F Scott Fitzgerald
+53. The Stand, Stephen King
+54. Anna Karenina, Leo Tolstoy
+55. A Suitable Boy, Vikram Seth
+56. The BFG, Roald Dahl
 44. The Count Of Monte Cristo, Alexandre Dumas
 45. Brideshead Revisited, Evelyn Waugh
 46. Animal Farm, George Orwell
@@ -54,10 +58,7 @@
 50. The Shell Seekers, Rosamunde Pilcher
 51. The Secret Garden, Frances Hodgson Burnett
 52. Of Mice And Men, John Steinbeck
-53. The Stand, Stephen King
-54. Anna Karenina, Leo Tolstoy
-55. A Suitable Boy, Vikram Seth
-56. The BFG, Roald Dahl
+
 57. Swallows And Amazons, Arthur Ransome
 58. Black Beauty, Anna Sewell
 59. Artemis Fowl, Eoin Colfer
