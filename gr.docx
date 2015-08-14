@@ -1,0 +1,190 @@
+
+UCL
+
+	FSE
+
+Sheng XU 
+Youshu Liu
+
+
+[ GS99: The MSc SSE/FSE Group Project]
+
+ Société Générale Real-Time Data Distribution Engine Project
+
+ 
+
+Contents
+
+
+
+
+Project Context and Objectives	2
+Potential approaches & related work	3
+Solution	3
+Evaluation	4
+Impact for client and other stakeholders	4
+Interesting lessons for other software engineers	6
+Future work	7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Project Context and Objectives
+
+
+Real-time trade system
+Millions 
+The GDR existing has quite emulous communication object
+We are working between the Gateway adapters and the RFQ Manager, where incoming and outgoing RFQs are transported via Tibco RV messages. The process for a one-way message is as follows:
+1.	New RFQ received from the ION bus, in the form of a CustomRecord
+2.	CustomRecord Transformed into a GefnericDataRecord
+3.	GenericDataRecord serialized into an xml-string and added to a Tibco message
+4.	Tibco (RV) message sent across to the RFQ Manager
+5.	Message deserialized into a GenericDataRecord
+6.	GenericDataRecord converted into a bondRfq
+7.	bondRfq enriched with message routing and market information
+8.	bondRfq serialized into an XML string for a Tibco (EMS) message and sent further
+
+Potential approaches & related work
+1.	Background Research : credit world
+2.	Serialized/ desterilized method
+3.	Analysis the existing system:
+a)	Static perspective: class diagram (StarUML)
+b)	Dynamic perpective: sequence diagram(SD edit)
+ 
+Component	Target Technologies	Standard
+Server	C#,Unity	Industry Standard
+MOM	Tibco EMS, RMDS, Protobuf	Industry Standard
+GUI	WPF	Industry Standard
+Testing 	Nunit, Moq	Industry Standard
+Project Management	JIRA	Industry Standard
+
+
+Solution
+
+Our primary focus is on replacing the weakly typed GenericDataRecord with a strongly typed object (IncomingRfq). As such, we need to create the relevant converters and serializers.
+Two secondary objectives are:
+•	Use the Protobuf-format rather than XML strings for messaging
+The end goal is to put in place a solution that is faster and more lightweight than the existing process, without compromising the flexibility/robustness of the GDR.
+Using a common messaging class for incoming and outgoing messages is not sensible, as the relevant fields are significantly different, and some parts of the processes are already strongly typed and well designed.
+
+Outgoing messages
+The current outgoing message format (from Dealer's GUI through the RFQ Manager to the Gateway Adapters) is as follows:
+•	RFQ Manager uses a strongly typed class, BaseRfqClientResponse and generates a GDR from it - this has 12 fields only, by the looks of it
+•	The GDR is serialized, sent across to the Gateway Adapters and deserialized
+•	The GDR is enriched with product-specific fields from the {{mkv.function.config}}s (up to 42, detailed in ResponsePOCO spreadsheet on this page)
+o	Values are simply copied, with some altered keys (map -> mapName). Other values are introduced from fallback values (and using constants GatewayLoginConfig and TradingBookNumberConfig from_unity.GenericRfq.config
+o	Resulting GDR is then used as basis for the CustomEntry (Ion). Using the same mkv.function.config-file.
+o	Hence, no changes should be made at this stage to the data itself
+
+Our proposed solution would work as follows:
+1.	On the RFQ Manager side, use a strongly typed class, OutgoingRfq. This will have about 14-16 fields only
+2.	Serialize and deserialize -> now in the GatewayAdapter solution
+3.	Read the function (MkvFunctionParameterProvider to determine the market (Bloom/TWB/MAX) and the product type (various Accepts/DealerQuotes)
+4.	Create a GDR, by combining the OutgoingRfq fields with the relevant market/product related fields as determined in step 3.
+5.	Transform GDR into a RecordEntry (Ion format) as usual
+6.	Task 
+Incoming messages
+ Implementation workflow for incoming messages (proposal)
+1.	Design incoming POCO (fields refer to here)
+2.	Write unit test cases for related classes in Incoming RFQ message process sequence diagram
+o	Start from (new) CustomRecordDataTransfer
+3.	Design protobuf-net class: related classes in Zeus and MDMS
+o	Zeus - https://itbox-svn/svn/CTT/CrederPricer/Zeus/trunk
+o	MDMS - https://itbox-svn/svn/CTT/CrederPricer/Mdms/Service/trunk
+4.	Implement and replace a (new) ObjectToStringTransformer
+5.	Write unit test cases for related classes in New RFQ process sequence diagram in RFQ Manager
+o	Start from (new) MessageAdapter
+6.	Implement new classes
+7.	Integration testing for whole incoming RFQ message (strategy and tools?)
+
+
+Evaluation
+
+Comparsion Testing : compare features , pros and cons of the product with competitor products
+Resilience testing: assess how stable the software when it is subject
+
+It depends on how you want to measure it as being ‘better’.  Aside from introducing resilience which cannot easily be measured you can measure the reduction in size of the serialised payload.  A much smaller payload will benefit from lower latencies when sending across the wire. A unit test would be the easiest way of measuring the differences in serialised payload size.
+
+The evaluation is mainly divided into 3 parts:
+The first is 
+
+
+Impact for client and other stakeholders
+
+Within the Credit E Trading business there was a strong desire to have their CDS RFQ   pop ups properly integrated into their existing credit pricer. This made sense both from an end user perspective and from a technology perspective as the credit pricer was fully integrated with the Soc Gen standard for GUI's, Unified.  Thus, the end goal was to produce a market leading RFQ pop up that was deployed as a unified module and could tthus be integrated with any Unified GUI, or be de[ployed separately in it's own Unified container.
+
+a)	Strongly Typed /loosely typed
+Const memory ,small memory allocation   /Non-const memory   
+The setter has clear target / no clear target, the gateway adopter has to add or remove the corresponding setter
+Use the serialized method without limits / only use standard .NET xml serialization system
+
+It means "this language uses a type system that I find distasteful". A "strongly typed" language by contrast is a language with a type system that I find pleasant.
+The terms are essentially meaningless and you should avoid them. Wikipedia lists eleven different meanings for "strongly typed", several of which are contradictory. This indicates that the odds of confusion being created are high in any conversation involving the term "strongly typed" or "weakly typed".
+All that you can really say with any certainty is that a "strongly typed" language under discussion has some additional restriction in the type system, either at runtime or compile time, that a "weakly typed" language under discussion lacks. What that restriction might be cannot be determined without further context.
+Instead of using "strongly typed" and "weakly typed", you should describe in detail what kind of type safety you mean. For example, C# is a statically typed language and a type safe language and amemory safe language, for the most part. C# allows all three of those forms of "strong" typing to be violated. The cast operator violates static typing; it says to the compiler "I know more about the runtime type of this expression than you do". If the developer is wrong, then the runtime will throw an exception in order to protect type safety. If the developer wishes to break type safety or memory safety, they can do so by turning off the type safety system by making an "unsafe" block. In an unsafe block you can use pointer magic to treat an int as a float (violating type safety) or to write to memory you do not own. (Violating memory safety.)
+C# imposes type restrictions that are checked at both compile-time and at runtime, thereby making it a "strongly typed" language compared to languages that do less compile-time checking or less runtime checking. C# also allows you to in special circumstances do an end-run around those restrictions, making it a "weakly typed" language compared with languages which do not allow you to do such an end-run.
+Which is it really? It is impossible to say; it depends on the point of view of the speaker and their attitude towards the various language features
+
+b)	Protobuf  vs  standard .NET serialization system & Json 
+
+Protobuf-net is not compatible with the standard .NET serialization system. It can be configured to behave in a fairly similar way, but one should be aware that
+
+•	protobuf-net ignores the [Serializable] attribute
+•	protobuf-net does not support custom serialization using ISerializable and a private constructor, and AFAIK it does not offer something very similar.
+However, it does offer several approaches to serialization on a type-by-type basis (see next section).
+
+
+The negative Impact:
+The new system is hard to maintain. When an new attribute adds, the corresponding setter and getter should also be added.
+
+Interesting lessons for other software engineers
+
+From this project we have consolidated our knowledge of VCS tools, in terms of their functions and limitations. 
+After that, we have learnt about researching on literatures and other resources (such as APIs and example source code) that are available on the Internet. These resources have made our progress much easier, especially in the initial stage, than if we have to do everything from stretch. In this sense, we hope that we will be building useful tools for others in the future. 
+Furthermore, we have learnt about integration of external tools into our code. However, the more external tools that we are employing, the more dependent we are on them. For example, we have adopted JGit in our code. We have used the diff function and the running time required for our tool is largely determined by the efficiency of the external tool. Therefore, optimization could be a concern. 
+During the development, since we use Git diff to compare the files in different revisions, we studied how the output of the Git diff is different from the traditional diff output. In addition, we deepened our understanding on how to measure the similarity between two strings by expressing the algorithm to compute the Levenshtein distance by Java programming language. 
+Lastly, we have experienced working as a team in software development. This involved organization of tasks, communication and dependencies on each other. For example, the person who designed the implementation has to explain clearly to other, so that everyone works in the same direction. Fortunately, the group discussion of literature has made us understand the topic better.
+
+The strategy of decreasing payload of server is from reducing the cost of transmission cost, and the transmission fee depends on the transmission message itself.
+
+But surely they mean something other than “unattractive” or “attractive”!
+
+I do exaggerate somewhat for comedic effect. So lets say: a more-strongly-typed language is one that has somerestriction in its type system that a more-weakly-typed language it is being compared to lacks. That’s all you can really say without more context.
+
+How can I have sensible conversations about languages and their type systems then?
+
+You can provide the missing context. Instead of using “strongly typed” and “weakly typed”, actually describe the restriction you mean. For example, C# is for the most part a statically typed language, because the compiler determines facts about the types of every expression. C# is for the most part a type safe language because it prevents values of one static type from being stored in variables of an incompatible type (and other similar type errors). And C# is for the most part a memory safe language because it prevents accidental access to bad memory.
+Thus, someone who thinks that “strongly typed” means “the language encourages static typing, type safety and memory safety in the vast majority of normal programs” would classify C# as a “strongly typed” language. C# is certainly more strongly typed than languages that do not have these restrictions in their type systems.
+But here’s the thing: because C# is a pragmatic language there is a way to override all three of those safety systems. Cast operators and “dynamic” in C# 4 override compile-time type checking and replace it with runtime type checking, and “unsafe” blocks allow you to turn off type safety and memory safety should you need to. Someone who thinks that “strongly typed” means “the language absolutely positively guarantees static typing, type safety and memory safety under all circumstances” would quite rightly classify C# as “weakly typed”. C# is not as strongly typed as languages that do enforce these restrictions all the time.
+So which is it, strong or weak? It is impossible to say because it depends on the point of view of the speaker, it depends on what they are comparing it to, and it depends on their attitude towards various language features. It’s therefore best to simply avoid these terms altogether, and speak more precisely about type system features.
+
+Future work
+
+•	Shift from RV to EMS messaging
+The end goal is to put in place a solution that is faster and more lightweight than the existing process, without compromising the flexibility/robustness of the GDR.
+
+1) Tibco RV is proffered choice for high speed messaging e..g publish of market data etc while Tibco EMS which is based upon JMS implementation is mostly used for more reliable messaging e.g. Order and trade and mostly work on acknowledgment . 
+
+2) Also topic and queue created on Tibco EMS are static in nature and they get created on Tibco EMS Server while Subject of Tibco RV is dynamic in nature.
+
+3) Tibco RV works on Bus model every node connected to bus have RVD running so no single point of failure if one node goes down other can still communicate with each other while in case of Tibco EMS work on Hub and Spoke model where  Tibco EMS Server is Single Point of failure because all topics and queues were created on this and publisher and subscriber connects to it , so if it went down all traffic will be stopped , though Tibco EMS Server could have another failover instance which can become primary in case required.
+
+
